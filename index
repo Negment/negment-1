@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <title>画像変換</title>
+  <style>
+    body { font-family: sans-serif; background: #f0f0f0; padding: 2em; }
+    input, select, button { margin: 1em 0; display: block; }
+    canvas { display: block; margin-top: 1em; max-width: 100%; }
+  </style>
+</head>
+<body>
+  <h1>画像変換</h1>
+  <input type="file" id="fileInput" accept="image/*" />
+  <select id="formatSelect">
+    <option value="image/apng">APNG (.apng)</option>
+    <option value="image/avif">AVIF (.avif)</option>
+    <option value="image/bmp">BMP (.bmp)</option>
+    <option value="image/bpg">BPG (.bpg)</option>
+    <option value="image/cgm">CGM (.cgm)</option>
+    <option value="image/dng">DNG (.dng)</option>
+    <option value="image/eps">EPS (.eps)</option>
+    <option value="image/exr">EXR (.exr)</option>
+    <option value="image/fits">FITS (.fits)</option>
+    <option value="image/gif">GIF (.gif)</option>
+    <option value="image/hdr">HDR (.hdr)</option>
+    <option value="image/heic">HEIC (.heic)</option>
+    <option value="image/ico">ICO (.ico)</option>
+    <option value="image/jpeg">JPEG (.jpeg)</option>
+    <option value="image/jpg">JPG (.jpg)</option>
+    <option value="image/jp2">JP2 (.jp2)</option>
+    <option value="image/jxr">JXR (.jxr)</option>
+    <option value="image/mng">MNG (.mng)</option>
+    <option value="image/pbm">PBM (.pbm)</option>
+    <option value="image/pcd">PCD (.pcd)</option>
+    <option value="image/pcx">PCX (.pcx)</option>
+    <option value="application/pdf">PDF (.pdf)</option>
+    <option value="image/pgm">PGM (.pgm)</option>
+    <option value="image/pict">PICT (.pict)</option>
+    <option value="image/png">PNG (.png)</option>
+    <option value="image/png8">PNG-8 (.png8)</option>
+    <option value="image/ppm">PPM (.ppm)</option>
+    <option value="image/psd">PSD (.psd)</option>
+    <option value="image/ras">RAS (.ras)</option>
+    <option value="image/raw">RAW (.raw)</option>
+    <option value="image/sgi">SGI (.sgi)</option>
+    <option value="image/svg">SVG (.svg)</option>
+    <option value="image/svg+xml">SVG+XML (.svg+xml)</option>
+    <option value="image/svgz">SVGZ (.svgz)</option>
+    <option value="image/tga">TGA (.tga)</option>
+    <option value="image/tiff">TIFF (.tiff)</option>
+    <option value="image/webp">WEBP (.webp)</option>
+    <option value="image/wmf">WMF (.wmf)</option>
+    <option value="image/xbm">XBM (.xbm)</option>
+    <option value="image/xcf">XCF (.xcf)</option>
+    <option value="image/xpm">XPM (.xpm)</option>
+    <option value="application/xps">XPS (.xps)</option>
+  </select>
+  <button onclick="convertImage()">変換してダウンロード</button>
+  <canvas id="canvas"></canvas>
+
+  <a href="https://scratch.mit.edu/users/unnot-leas/">開発者のページ</a>
+
+  <script>
+    function fileToImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const img = new Image();
+          img.onload = () => resolve(img);
+          img.onerror = reject;
+          img.src = reader.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function imageToCanvas(img) {
+      const canvas = document.getElementById("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      return canvas;
+    }
+
+    function canvasToBlob(canvas, type) {
+      return new Promise((resolve) => {
+        canvas.toBlob(resolve, type);
+      });
+    }
+
+    async function convertImage() {
+      const fileInput = document.getElementById("fileInput");
+      const formatSelect = document.getElementById("formatSelect");
+      const canvas = document.getElementById("canvas");
+
+      if (!fileInput.files.length) {
+        alert("画像を選択してください");
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const outputType = formatSelect.value;
+
+      try {
+        const img = await fileToImage(file);
+        const canvas = imageToCanvas(img);
+        const blob = await canvasToBlob(canvas, outputType);
+
+        if (!blob) {
+          alert("この形式には対応していません！");
+          return;
+        }
+
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = "converted" + "." + outputType.split("/")[1];
+        a.click();
+        URL.revokeObjectURL(url);
+      } catch (err) {
+        alert("変換に失敗しました：" + err);
+      }
+    }
+  </script>
+</body>
+</html>
